@@ -1,8 +1,12 @@
 
 ; This is a test program
-LoadAccImm   #A5
-StoreAccZp   %11111111
+LoadAccImm      #A5
+AddCImm         16
+StoreAccZp      %00100000
 NoOp
-;JumpAbs 0
+LoadAccImm      %10101011
+AddCImm         %01010101
+BranchZ         #05
+JumpAbs 0
 NoOp
 EmuSignal #FF

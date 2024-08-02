@@ -1,6 +1,21 @@
-use std::{env, fs};
+use std::{
+    env, fs,
+    io::{self, Read, Write},
+};
 
 use rustemu::Vm;
+
+fn pause() {
+    let mut stdin = io::stdin();
+    let mut stdout = io::stdout();
+
+    // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+    //write!(stdout, "Press any key to continue...").unwrap();
+    stdout.flush().unwrap();
+
+    // Read a single byte and discard
+    let _ = stdin.read(&mut [0u8]).unwrap();
+}
 
 fn main() -> () {
     let args: Vec<String> = env::args().collect();
@@ -22,6 +37,11 @@ fn main() -> () {
     vm.copy_memory(0, &prog);
 
     while !vm.halt {
-        let _ = vm.cycle();
+        let res = vm.cycle();
+        match res {
+            Ok(_) => {},
+            Err(err) => println!("{}", err),
+        }
+        pause();
     }
 }

@@ -10,7 +10,7 @@ pub struct Vm {
     registers: [u8; 8],
     memory: [u8; 64 * 1024],
     signal_handlers: HashMap<u8, SignalFunction>,
-    pub halt: bool
+    pub halt: bool,
 }
 
 impl Vm {
@@ -19,7 +19,7 @@ impl Vm {
             registers: [0; 8],
             memory: [0; 64 * 1024],
             signal_handlers: HashMap::new(),
-            halt: false
+            halt: false,
         }
     }
 
@@ -32,9 +32,10 @@ impl Vm {
     }
 
     pub fn set_flag(&mut self, register_flag: RegisterFlag, value: bool) {
+        //println!("FLAG write {:?}, {}", register_flag, value);
         if value {
             self.registers[Register::SR as usize] |=
-                0b0000_0001_u8.rotate_right(register_flag as u32);
+                0b0000_0001_u8.rotate_left(register_flag as u32);
         } else {
             self.registers[Register::SR as usize] &=
                 0b1111_1110_u8.rotate_left(register_flag as u32);
@@ -46,6 +47,7 @@ impl Vm {
     }
 
     pub fn set_register(&mut self, register: Register, value: u8) -> () {
+        //println!("REG write {:?}, {}", register, value);
         self.registers[register as usize] = value
     }
 
@@ -74,7 +76,6 @@ impl Vm {
     }
 
     pub fn cycle(&mut self) -> Result<(), String> {
-        println!("{}", self);
         let mut pc: usize = (self.get_register(Register::PCH) as usize) << 8
             | (self.get_register(Register::PCL) as usize);
 
@@ -88,8 +89,22 @@ impl Vm {
 
         match instruction {
             Instruction::NoOp => {}
-            Instruction::Break => {}
-            Instruction::LoadAccImm(op) => self.set_register(Register::AC, op),
+            Instruction::Break => todo!(),
+            Instruction::LoadAccImm(op) => {
+                self.set_register(Register::AC, op);
+
+                // Set flags
+                if op == 0 {
+                    self.set_flag(RegisterFlag::Zero, true)
+                } else {
+                    self.set_flag(RegisterFlag::Zero, false)
+                }
+                if op & 0x80 > 0 {
+                    self.set_flag(RegisterFlag::Negative, true)
+                } else {
+                    self.set_flag(RegisterFlag::Negative, false)
+                }
+            }
             Instruction::StoreAccZp(op) => {
                 let value = self.get_register(Register::AC);
                 self.write_memory(op as u16, value)?
@@ -103,10 +118,65 @@ impl Vm {
 
                 fn_signal(self)?
             }
+            Instruction::AddCImm(op) => {
+                let carry = self.get_flag(RegisterFlag::Carry);
+                //let memory = self.read_memory(op as u16).ok_or(format!("Memory problem"))?;
+                let acc = self.get_register(Register::AC);
+
+                // Use u16 to simplify flag checks
+                let res = (acc as u16) + (op as u16) + (carry as u16);
+
+                // Set flags
+                if res > 255 {
+                    self.set_flag(RegisterFlag::Carry, true)
+                } else {
+                    self.set_flag(RegisterFlag::Carry, false)
+                }
+                if res & 0xFF == 0 {
+                    self.set_flag(RegisterFlag::Zero, true)
+                } else {
+                    self.set_flag(RegisterFlag::Zero, false)
+                }
+                if res & 0x80 != (acc & 0x80) as u16 {
+                    self.set_flag(RegisterFlag::Overflow, true)
+                } else {
+                    self.set_flag(RegisterFlag::Overflow, false)
+                }
+                if res & 0x80 > 0 {
+                    self.set_flag(RegisterFlag::Negative, true)
+                } else {
+                    self.set_flag(RegisterFlag::Negative, false)
+                }
+
+                // Set accumulator
+                self.set_register(Register::AC, (res & 0xFF) as u8)
+            }
+            Instruction::BranchCC(op) => {
+                let carry = self.get_flag(RegisterFlag::Carry);
+                if !carry {
+                    // remove instruction size
+                    pc = (pc as isize + isize::from((op - 2) as i8)) as usize
+                }
+            }
+            Instruction::BranchCS(op) => {
+                let carry = self.get_flag(RegisterFlag::Carry);
+                if carry {
+                    // remove instruction size
+                    pc = (pc as isize + isize::from((op - 2) as i8)) as usize
+                }
+            }
+            Instruction::BranchZ(op) => {
+                let zero = self.get_flag(RegisterFlag::Zero);
+                if zero {
+                    // remove instruction size
+                    pc = (pc as isize + isize::from((op - 2) as i8)) as usize
+                }
+            }
         }
 
         self.set_register(Register::PCH, ((pc & 0xFF00) >> 8) as u8);
         self.set_register(Register::PCL, (pc & 0xFF) as u8);
+        println!("{}", self);
 
         Ok(())
     }
