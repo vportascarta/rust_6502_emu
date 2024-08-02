@@ -5,8 +5,5 @@ edition = "2021"
 
 [dependencies]
 
-[[bin]]
-name = "run"
-
 [dependencies.rustemu_macros]
 path = "rustemu_macros"
