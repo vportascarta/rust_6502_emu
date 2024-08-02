@@ -7,7 +7,7 @@ fn main() -> () {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        println!("You need to provide a asm file! : {} example.bin", args[0]);
+        println!("You need to provide a bin file! : {} example.bin", args[0]);
         return;
     }
 
