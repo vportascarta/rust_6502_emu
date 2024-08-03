@@ -101,7 +101,7 @@ fn impl_instruction_struct(ast: &syn::ItemEnum) -> TokenStream {
                             ))
                         } else {
                             Err(ParsingError::BlockingError(format!(
-                                "Notright number of parameters for {}", stringify!(#field_name)
+                                "Not right number of parameters for {}", stringify!(#field_name)
                             )))
                         }
                     }
@@ -173,7 +173,7 @@ fn impl_instruction_struct(ast: &syn::ItemEnum) -> TokenStream {
                 match value[0] {
                     #(#field_from_binary,)*
                     _ => Err(format!(
-                        "You have passed an unknown instruction : {}",
+                        "You have passed an unknown instruction : 0x{:02x}",
                         value[0]
                     ))
                 }
