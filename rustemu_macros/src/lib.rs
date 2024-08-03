@@ -107,7 +107,7 @@ fn impl_instruction_struct(ast: &syn::ItemEnum) -> TokenStream {
                     }
                 });
                 field_to_string.push(quote! {
-                    Instruction::#field_name(op) => write!(f, "{} #{:02x}", stringify!(#field_name), op)
+                    Instruction::#field_name(op) => write!(f, "{} ${:02x}", stringify!(#field_name), op)
                 });
             }
             Some(ty) if ty == "u16" => {
@@ -146,7 +146,7 @@ fn impl_instruction_struct(ast: &syn::ItemEnum) -> TokenStream {
                     }
                 });
                 field_to_string.push(quote! {
-                    Instruction::#field_name(op) => write!(f, "{} #{:04x}", stringify!(#field_name), op)
+                    Instruction::#field_name(op) => write!(f, "{} ${:04x}", stringify!(#field_name), op)
                 });
             }
             _ => todo!(),
@@ -259,7 +259,7 @@ fn impl_instruction_struct(ast: &syn::ItemEnum) -> TokenStream {
                 .ok_or(format!("You have passed an empty string"))?;
         
             match first_char {
-                '#' => u16::from_str_radix(&num_str[1..], 16)
+                '$' => u16::from_str_radix(&num_str[1..], 16)
                     .map_err(|_| format!("Error converting u16 from hex string")),
                 '%' => u16::from_str_radix(&num_str[1..], 2)
                     .map_err(|_| format!("Error converting u16 from binary string")),
