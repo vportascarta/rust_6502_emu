@@ -1,9 +1,23 @@
 use std::{
-    env, fs,
+    fs,
     io::{self, Read, Write},
 };
 
+use clap::Parser;
 use rustemu::Vm;
+
+/// Simple program to emulate a 6502 CPU
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Path to the binary file
+    #[arg(short, long)]
+    prog_file_path: String,
+
+    /// Launch in step by step mode
+    #[arg(short, long, default_value_t = false)]
+    debug: bool,
+}
 
 fn pause() {
     let mut stdin = io::stdin();
@@ -18,30 +32,22 @@ fn pause() {
 }
 
 fn main() -> () {
-    let args: Vec<String> = env::args().collect();
+    let args = Args::parse();
 
-    if args.len() < 2 {
-        println!("You need to provide a bin file! : {} example.bin", args[0]);
-        return;
-    }
-
-    fn signal_halt(vm: &mut Vm) -> Result<(), String> {
-        vm.halt = true;
-        Ok(())
-    }
-
-    let prog = fs::read(args[1].as_str()).unwrap();
+    let prog = fs::read(args.prog_file_path.as_str()).unwrap();
 
     let mut vm = Vm::new();
-    vm.define_handler(0xFF, signal_halt);
     vm.copy_memory(0, &prog);
 
     while !vm.halt {
         let res = vm.cycle();
         match res {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(err) => println!("{}", err),
         }
-        pause();
+
+        if args.debug {
+            pause();
+        }
     }
 }
