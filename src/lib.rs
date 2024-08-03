@@ -90,7 +90,7 @@ impl Vm {
         match instruction {
             Instruction::NoOp => {}
             Instruction::Break => todo!(),
-            Instruction::LoadAccImm(op) => {
+            Instruction::LoadACImm(op) => {
                 self.set_register(Register::AC, op);
 
                 // Set flags
@@ -105,7 +105,7 @@ impl Vm {
                     self.set_flag(RegisterFlag::Negative, false)
                 }
             }
-            Instruction::StoreAccZp(op) => {
+            Instruction::StoreACZp(op) => {
                 let value = self.get_register(Register::AC);
                 self.write_memory(op as u16, value)?
             }
@@ -118,7 +118,7 @@ impl Vm {
 
                 fn_signal(self)?
             }
-            Instruction::AddCImm(op) => {
+            Instruction::AddImm(op) => {
                 let carry = self.get_flag(RegisterFlag::Carry);
                 //let memory = self.read_memory(op as u16).ok_or(format!("Memory problem"))?;
                 let acc = self.get_register(Register::AC);
@@ -151,27 +151,28 @@ impl Vm {
                 // Set accumulator
                 self.set_register(Register::AC, (res & 0xFF) as u8)
             }
-            Instruction::BranchCC(op) => {
+            Instruction::BranchNotCarry(op) => {
                 let carry = self.get_flag(RegisterFlag::Carry);
                 if !carry {
                     // remove instruction size
                     pc = (pc as isize + isize::from((op - 2) as i8)) as usize
                 }
             }
-            Instruction::BranchCS(op) => {
+            Instruction::BranchCarry(op) => {
                 let carry = self.get_flag(RegisterFlag::Carry);
                 if carry {
                     // remove instruction size
                     pc = (pc as isize + isize::from((op - 2) as i8)) as usize
                 }
             }
-            Instruction::BranchZ(op) => {
+            Instruction::BranchZero(op) => {
                 let zero = self.get_flag(RegisterFlag::Zero);
                 if zero {
                     // remove instruction size
                     pc = (pc as isize + isize::from((op - 2) as i8)) as usize
                 }
             }
+            _ => todo!()
         }
 
         self.set_register(Register::PCH, ((pc & 0xFF00) >> 8) as u8);
