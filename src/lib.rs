@@ -88,28 +88,209 @@ impl Vm {
         println!("{}", instruction);
 
         match instruction {
-            Instruction::NoOp => {}
-            Instruction::Break => todo!(),
             Instruction::LoadACImm(op) => {
                 self.set_register(Register::AC, op);
-
-                // Set flags
-                if op == 0 {
-                    self.set_flag(RegisterFlag::Zero, true)
-                } else {
-                    self.set_flag(RegisterFlag::Zero, false)
-                }
-                if op & 0x80 > 0 {
-                    self.set_flag(RegisterFlag::Negative, true)
-                } else {
-                    self.set_flag(RegisterFlag::Negative, false)
-                }
+                self.update_flag_zero(op.into());
+                self.update_flag_negative(op.into());
             }
+            Instruction::LoadACAbs(_) => todo!(),
+            Instruction::LoadACAbsX(_) => todo!(),
+            Instruction::LoadACAbsY(_) => todo!(),
+            Instruction::LoadACZp(_) => todo!(),
+            Instruction::LoadACZpX(_) => todo!(),
+            Instruction::LoadACZpXInd(_) => todo!(),
+            Instruction::LoadACZpYInd(_) => todo!(),
+            Instruction::LoadXImm(_) => todo!(),
+            Instruction::LoadXAbs(_) => todo!(),
+            Instruction::LoadXAbsY(_) => todo!(),
+            Instruction::LoadXZp(_) => todo!(),
+            Instruction::LoadXZpY(_) => todo!(),
+            Instruction::LoadYImm(_) => todo!(),
+            Instruction::LoadYAbs(_) => todo!(),
+            Instruction::LoadYAbsX(_) => todo!(),
+            Instruction::LoadYZp(_) => todo!(),
+            Instruction::LoadYZpX(_) => todo!(),
+            Instruction::StoreACAbs(op) => {
+                let value = self.get_register(Register::AC);
+                self.write_memory(op, value)?
+            }
+            Instruction::StoreACAbsX(_) => todo!(),
+            Instruction::StoreACAbsY(_) => todo!(),
             Instruction::StoreACZp(op) => {
                 let value = self.get_register(Register::AC);
-                self.write_memory(op as u16, value)?
+                self.write_memory(op.into(), value)?
             }
-            Instruction::JumpAbs(op) => pc = op as usize,
+            Instruction::StoreACZpX(_) => todo!(),
+            Instruction::StoreACZpXInd(_) => todo!(),
+            Instruction::StoreACZpYInd(_) => todo!(),
+            Instruction::StoreXAbs(_) => todo!(),
+            Instruction::StoreXZp(_) => todo!(),
+            Instruction::StoreXZpY(_) => todo!(),
+            Instruction::StoreYAbs(_) => todo!(),
+            Instruction::StoreYZp(_) => todo!(),
+            Instruction::StoreYZpX(_) => todo!(),
+            Instruction::TransACX => todo!(),
+            Instruction::TransACY => todo!(),
+            Instruction::TransSPX => todo!(),
+            Instruction::TransXAC => todo!(),
+            Instruction::TransYAC => todo!(),
+            Instruction::TransXSP => todo!(),
+            Instruction::PushAC => todo!(),
+            Instruction::PushSR => todo!(),
+            Instruction::PullAC => todo!(),
+            Instruction::PullSR => todo!(),
+            Instruction::ArmLShfAC => {
+                let value = self.get_register(Register::AC);
+                let res = (value as u16) << 1;
+                self.update_flag_carry(res);
+                self.set_register(Register::AC, (res & 0xFF) as u8);
+            }
+            Instruction::ArmLShfAbs(_) => todo!(),
+            Instruction::ArmLShfAbsX(_) => todo!(),
+            Instruction::ArmLShfZp(_) => todo!(),
+            Instruction::ArmLShfZpX(_) => todo!(),
+            Instruction::LogRShfAC => todo!(),
+            Instruction::LogRShfAbs(_) => todo!(),
+            Instruction::LogRShfAbsX(_) => todo!(),
+            Instruction::LogRShfZp(_) => todo!(),
+            Instruction::LogRShfZpX(_) => todo!(),
+            Instruction::LRotAC => todo!(),
+            Instruction::LRotAbs(_) => todo!(),
+            Instruction::LRotAbsX(_) => todo!(),
+            Instruction::LRotZp(_) => todo!(),
+            Instruction::LRotZpX(_) => todo!(),
+            Instruction::RRotAC => todo!(),
+            Instruction::RRotAbs(_) => todo!(),
+            Instruction::RRotAbsX(_) => todo!(),
+            Instruction::RRotZp(_) => todo!(),
+            Instruction::RRotZpX(_) => todo!(),
+            Instruction::AndImm(_) => todo!(),
+            Instruction::AndAbs(_) => todo!(),
+            Instruction::AndAbsX(_) => todo!(),
+            Instruction::AndAbsY(_) => todo!(),
+            Instruction::AndZp(_) => todo!(),
+            Instruction::AndZpX(_) => todo!(),
+            Instruction::AndZpXInd(_) => todo!(),
+            Instruction::AndZpYInd(_) => todo!(),
+            Instruction::BitAbs(_) => todo!(),
+            Instruction::BitZp(_) => todo!(),
+            Instruction::EorImm(_) => todo!(),
+            Instruction::EorAbs(_) => todo!(),
+            Instruction::EorAbsX(_) => todo!(),
+            Instruction::EorAbsY(_) => todo!(),
+            Instruction::EorZp(_) => todo!(),
+            Instruction::EorZpX(_) => todo!(),
+            Instruction::EorZpXInd(_) => todo!(),
+            Instruction::EorZpYInd(_) => todo!(),
+            Instruction::OrImm(_) => todo!(),
+            Instruction::OrAbs(_) => todo!(),
+            Instruction::OrAbsX(_) => todo!(),
+            Instruction::OrAbsY(_) => todo!(),
+            Instruction::OrZp(_) => todo!(),
+            Instruction::OrZpX(_) => todo!(),
+            Instruction::OrZpXInd(_) => todo!(),
+            Instruction::OrZpYInd(_) => todo!(),
+            Instruction::AddImm(op) => {
+                let carry = self.get_flag(RegisterFlag::Carry);
+                let acc = self.get_register(Register::AC);
+                let res = (acc as u16) + (op as u16) + (carry as u16);
+
+                // Set flags
+                self.update_flag_carry(res);
+                self.update_flag_zero(res);
+                self.update_flag_overflow(acc as u16, res);
+                self.update_flag_negative(res);
+
+                self.set_register(Register::AC, (res & 0xFF) as u8)
+            },
+            Instruction::AddAbs(op) => {
+                let carry = self.get_flag(RegisterFlag::Carry);
+                let acc = self.get_register(Register::AC);
+                let mem = self.read_memory(op).unwrap();
+                let res = (acc as u16) + (mem as u16) + (carry as u16);
+
+                // Set flags
+                self.update_flag_carry(res);
+                self.update_flag_zero(res);
+                self.update_flag_overflow(acc as u16, res);
+                self.update_flag_negative(res);
+
+                self.set_register(Register::AC, (res & 0xFF) as u8)
+            },
+            Instruction::AddAbsX(_) => todo!(),
+            Instruction::AddAbsY(_) => todo!(),
+            Instruction::AddZp(_) => todo!(),
+            Instruction::AddZpX(_) => todo!(),
+            Instruction::AddZpXInd(_) => todo!(),
+            Instruction::AddZpYInd(_) => todo!(),
+            Instruction::CmpACImm(_) => todo!(),
+            Instruction::CmpACAbs(_) => todo!(),
+            Instruction::CmpACAbsX(_) => todo!(),
+            Instruction::CmpACAbsY(_) => todo!(),
+            Instruction::CmpACZp(_) => todo!(),
+            Instruction::CmpACZpX(_) => todo!(),
+            Instruction::CmpACZpXInd(_) => todo!(),
+            Instruction::CmpACZpYInd(_) => todo!(),
+            Instruction::CmpXImm(_) => todo!(),
+            Instruction::CmpXAbs(_) => todo!(),
+            Instruction::CmpXZp(_) => todo!(),
+            Instruction::CmpYImm(_) => todo!(),
+            Instruction::CmpYAbs(_) => todo!(),
+            Instruction::CmpYZp(_) => todo!(),
+            Instruction::SubImm(_) => todo!(),
+            Instruction::SubAbs(_) => todo!(),
+            Instruction::SubAbsX(_) => todo!(),
+            Instruction::SubAbsY(_) => todo!(),
+            Instruction::SubZp(_) => todo!(),
+            Instruction::SubZpX(_) => todo!(),
+            Instruction::SubZpXInd(_) => todo!(),
+            Instruction::SubZpYInd(_) => todo!(),
+            Instruction::DecMemAbs(_) => todo!(),
+            Instruction::DecMemAbsX(_) => todo!(),
+            Instruction::DecMemZp(_) => todo!(),
+            Instruction::DecMemZpX(_) => todo!(),
+            Instruction::DecX => todo!(),
+            Instruction::DecY => todo!(),
+            Instruction::IncMemAbs(_) => todo!(),
+            Instruction::IncMemAbsX(_) => todo!(),
+            Instruction::IncMemZp(_) => todo!(),
+            Instruction::IncMemZpX(_) => todo!(),
+            Instruction::IncX => todo!(),
+            Instruction::IncY => todo!(),
+            Instruction::Break => todo!(),
+            Instruction::JumpAbs(op) => pc = op.into(),
+            Instruction::JumpAbsInc(_) => todo!(),
+            Instruction::JumpSubAbs(_) => todo!(),
+            Instruction::RetInt => todo!(),
+            Instruction::RetSub => todo!(),
+            Instruction::BranchNotCarry(op) => {
+                if !self.get_flag(RegisterFlag::Carry) {
+                    pc = self.decode_relative(op)
+                }
+            }
+            Instruction::BranchCarry(op) => {
+                if self.get_flag(RegisterFlag::Carry) {
+                    pc = self.decode_relative(op)
+                }
+            }
+            Instruction::BranchZero(op) => {
+                if self.get_flag(RegisterFlag::Zero) {
+                    pc = self.decode_relative(op)
+                }
+            }
+            Instruction::BranchNeg(_) => todo!(),
+            Instruction::BranchNotZero(_) => todo!(),
+            Instruction::BranchNotNeg(_) => todo!(),
+            Instruction::BranchNotOver(_) => todo!(),
+            Instruction::BranchOver(_) => todo!(),
+            Instruction::ClrCarry => self.set_flag(RegisterFlag::Carry, false),
+            Instruction::ClrDec => todo!(),
+            Instruction::ClrIntDis => todo!(),
+            Instruction::ClrOver => todo!(),
+            Instruction::SetCarry => todo!(),
+            Instruction::SetDec => todo!(),
+            Instruction::SetIntDis => todo!(),
+            Instruction::NoOp => {}
             Instruction::EmuSignal(op) => {
                 let fn_signal = self
                     .signal_handlers
@@ -118,61 +299,6 @@ impl Vm {
 
                 fn_signal(self)?
             }
-            Instruction::AddImm(op) => {
-                let carry = self.get_flag(RegisterFlag::Carry);
-                //let memory = self.read_memory(op as u16).ok_or(format!("Memory problem"))?;
-                let acc = self.get_register(Register::AC);
-
-                // Use u16 to simplify flag checks
-                let res = (acc as u16) + (op as u16) + (carry as u16);
-
-                // Set flags
-                if res > 255 {
-                    self.set_flag(RegisterFlag::Carry, true)
-                } else {
-                    self.set_flag(RegisterFlag::Carry, false)
-                }
-                if res & 0xFF == 0 {
-                    self.set_flag(RegisterFlag::Zero, true)
-                } else {
-                    self.set_flag(RegisterFlag::Zero, false)
-                }
-                if res & 0x80 != (acc & 0x80) as u16 {
-                    self.set_flag(RegisterFlag::Overflow, true)
-                } else {
-                    self.set_flag(RegisterFlag::Overflow, false)
-                }
-                if res & 0x80 > 0 {
-                    self.set_flag(RegisterFlag::Negative, true)
-                } else {
-                    self.set_flag(RegisterFlag::Negative, false)
-                }
-
-                // Set accumulator
-                self.set_register(Register::AC, (res & 0xFF) as u8)
-            }
-            Instruction::BranchNotCarry(op) => {
-                let carry = self.get_flag(RegisterFlag::Carry);
-                if !carry {
-                    // remove instruction size
-                    pc = (pc as isize + isize::from((op - 2) as i8)) as usize
-                }
-            }
-            Instruction::BranchCarry(op) => {
-                let carry = self.get_flag(RegisterFlag::Carry);
-                if carry {
-                    // remove instruction size
-                    pc = (pc as isize + isize::from((op - 2) as i8)) as usize
-                }
-            }
-            Instruction::BranchZero(op) => {
-                let zero = self.get_flag(RegisterFlag::Zero);
-                if zero {
-                    // remove instruction size
-                    pc = (pc as isize + isize::from((op - 2) as i8)) as usize
-                }
-            }
-            _ => todo!()
         }
 
         self.set_register(Register::PCH, ((pc & 0xFF00) >> 8) as u8);
@@ -180,6 +306,93 @@ impl Vm {
         println!("{}", self);
 
         Ok(())
+    }
+
+    // Addressing mode decoding
+    fn decode_absolute_x(&self, value: u16) -> u16 {
+        let x = self.get_register(Register::X);
+        value + x as u16
+    }
+
+    fn decode_absolute_y(&self, value: u16) -> u16 {
+        let y = self.get_register(Register::Y);
+        value + y as u16
+    }
+
+    fn decode_absolute_indirect(&self, value: u16) -> u16 {
+        let mem_low = self.read_memory(value).unwrap();
+        let mem_high = self.read_memory(value + 1).unwrap();
+        ((mem_high as u16) << 8) | (mem_low as u16)
+    }
+
+    fn decode_relative(&self, value: u8) -> usize {
+        let pc: usize = (self.get_register(Register::PCH) as usize) << 8
+            | (self.get_register(Register::PCL) as usize);
+
+        (pc as isize + isize::from((value) as i8)) as usize
+    }
+
+    fn decode_zeropage_x(&self, value: u8) -> u8 {
+        let x = self.get_register(Register::X);
+        value.wrapping_add(x)
+    }
+
+    fn decode_zeropage_y(&self, value: u8) -> u8 {
+        let y = self.get_register(Register::Y);
+        value.wrapping_add(y)
+    }
+
+    fn decode_zeropage_x_indirect(&self, value: u8) -> u16 {
+        let x = self.get_register(Register::X);
+        let addr = value.wrapping_add(x) as u16;
+
+        let mem_low = self.read_memory(addr).unwrap();
+        let mem_high = self.read_memory(addr + 1).unwrap();
+        ((mem_high as u16) << 8) | (mem_low as u16)
+    }
+
+    fn decode_zeropage_indirect_y(&self, value: u8) -> u16 {
+        let addr = value as u16;
+
+        let mem_low = self.read_memory(addr).unwrap();
+        let mem_high = self.read_memory(addr + 1).unwrap();
+
+        let y = self.get_register(Register::X);
+
+        (((mem_high as u16) << 8) | (mem_low as u16)) + y as u16
+    }
+
+    // Set flags - Use u16 to simplify flag checks
+    fn update_flag_carry(&mut self, value: u16) {
+        if value > 255 {
+            self.set_flag(RegisterFlag::Carry, true)
+        } else {
+            self.set_flag(RegisterFlag::Carry, false)
+        }
+    }
+
+    fn update_flag_zero(&mut self, value: u16) {
+        if value & 0xFF == 0 {
+            self.set_flag(RegisterFlag::Zero, true)
+        } else {
+            self.set_flag(RegisterFlag::Zero, false)
+        }
+    }
+
+    fn update_flag_overflow(&mut self, old: u16, value: u16) {
+        if value & 0x80 != old & 0x80 {
+            self.set_flag(RegisterFlag::Overflow, true)
+        } else {
+            self.set_flag(RegisterFlag::Overflow, false)
+        }
+    }
+
+    fn update_flag_negative(&mut self, value: u16) {
+        if value & 0x80 > 0 {
+            self.set_flag(RegisterFlag::Negative, true)
+        } else {
+            self.set_flag(RegisterFlag::Negative, false)
+        }
     }
 }
 

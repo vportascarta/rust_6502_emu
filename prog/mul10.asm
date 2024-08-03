@@ -2,11 +2,11 @@
 LoadACImm      16
 
 ArmLShfAC
-StoreACAbs      $000b
+StoreACAbs      $200b
 ArmLShfAC
 ArmLShfAC
 ClrCarry
-AddAbs          $000b
-StoreACAbs      $000b
+AddAbs          $200b
+StoreACAbs      $200b
 
 EmuSignal #FF

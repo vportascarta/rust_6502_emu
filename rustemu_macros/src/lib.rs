@@ -2,20 +2,46 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::Variant;
 
-#[proc_macro_derive(EmuInstruction, attributes(opcode, addrmode))]
+#[proc_macro_derive(EmuInstruction, attributes(opcode, asmstr, addrmode))]
 pub fn generate_vm_instruction_impl(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
-    impl_instruction_struct(&ast)
+    impl_instruction_struct(&ast, false)
 }
 
-fn get_opcode(x: &Variant) -> syn::LitInt {
+#[proc_macro_derive(EmuInstructionStrict, attributes(opcode, asmstr, addrmode))]
+pub fn generate_vm_instruction_impl_strict(input: TokenStream) -> TokenStream {
+    let ast = syn::parse(input).unwrap();
+    impl_instruction_struct(&ast, true)
+}
+
+fn get_opcode(x: &Variant) -> u8 {
     for attr in x.attrs.iter() {
         if attr.path().is_ident("opcode") {
             let value: syn::LitInt = attr.parse_args().unwrap();
-            return value;
+            return value.base10_parse().unwrap();
         }
     }
-    syn::parse(quote! {0}.into()).unwrap()
+    0
+}
+
+fn get_asmstr(x: &Variant) -> String {
+    for attr in x.attrs.iter() {
+        if attr.path().is_ident("asmstr") {
+            let value: syn::LitStr = attr.parse_args().unwrap();
+            return value.value()
+        }
+    }
+    "".to_string()
+}
+
+fn get_addrmode(x: &Variant) -> String {
+    for attr in x.attrs.iter() {
+        if attr.path().is_ident("addrmode") {
+            let value: syn::LitStr = attr.parse_args().unwrap();
+            return value.value()
+        }
+    }
+    "".to_string()
 }
 
 fn get_type_name(ty: &syn::Type) -> String {
@@ -38,7 +64,10 @@ fn get_operand_type(x: &Variant) -> Option<String> {
     }
 }
 
-fn impl_instruction_struct(ast: &syn::ItemEnum) -> TokenStream {
+fn impl_instruction_struct(ast: &syn::ItemEnum, strict_mode: bool) -> TokenStream {
+    let allowed_addr_modes = vec!["imp","imm","abs","abi","abx","aby","zpm","zpx", "zpy","zxi","zyi","rel"];
+    let mut already_parse_opcode: Vec<u8> = Vec::new();
+
     let mut field_size: Vec<_> = Vec::new();
     let mut field_to_binary: Vec<_> = Vec::new();
     let mut field_from_binary: Vec<_> = Vec::new();
@@ -47,8 +76,21 @@ fn impl_instruction_struct(ast: &syn::ItemEnum) -> TokenStream {
 
     for x in ast.variants.iter() {
         let field_name = &x.ident;
-        let field_opcode: u8 = get_opcode(x).base10_parse().unwrap();
+        let field_opcode: u8 = get_opcode(x);
+        //let field_asmstr: String = get_asmstr(x);
+        let field_addrmode: String = get_addrmode(x);
         let field_param_type = get_operand_type(x);
+
+        if strict_mode {
+            if !allowed_addr_modes.contains(&field_addrmode.as_str()) {
+                panic!("The address mode of {} is not correct", field_name)
+            }
+
+            if already_parse_opcode.contains(&field_opcode) {
+                panic!("The opcode of {} has already been parsed", field_name)
+            }
+        }
+        already_parse_opcode.push(field_opcode);
 
         match field_param_type {
             None => {
@@ -242,7 +284,7 @@ fn impl_instruction_struct(ast: &syn::ItemEnum) -> TokenStream {
                 .ok_or(format!("You have passed an empty string"))?;
         
             match first_char {
-                '#' => u8::from_str_radix(&num_str[1..], 16)
+                '$' => u8::from_str_radix(&num_str[1..], 16)
                     .map_err(|_| format!("Error converting u8 from hex string")),
                 '%' => u8::from_str_radix(&num_str[1..], 2)
                     .map_err(|_| format!("Error converting u8 from binary string")),
