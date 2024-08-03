@@ -10,4 +10,4 @@ BranchZero     $05
 JumpAbs 0
 NoOp
 
-EmuSignal #FF
+Jam

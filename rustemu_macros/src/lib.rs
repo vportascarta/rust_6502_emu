@@ -77,7 +77,7 @@ fn impl_instruction_struct(ast: &syn::ItemEnum, strict_mode: bool) -> TokenStrea
     for x in ast.variants.iter() {
         let field_name = &x.ident;
         let field_opcode: u8 = get_opcode(x);
-        //let field_asmstr: String = get_asmstr(x);
+        let _field_asmstr: String = get_asmstr(x);
         let field_addrmode: String = get_addrmode(x);
         let field_param_type = get_operand_type(x);
 

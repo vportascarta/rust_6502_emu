@@ -223,6 +223,7 @@ pub enum Instruction {
     
     // Other
     #[opcode(0xEA)] #[asmstr("NOP")] #[addrmode("imp")] NoOp,
+    #[opcode(0xF2)] #[asmstr("JAM")] #[addrmode("imp")] Jam,
     #[opcode(0xFF)] #[asmstr("SIG")] #[addrmode("imm")] EmuSignal(u8),
 }
 

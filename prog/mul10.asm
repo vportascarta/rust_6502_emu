@@ -9,4 +9,4 @@ ClrCarry
 AddAbs          $200b
 StoreACAbs      $200b
 
-EmuSignal #FF
+Jam

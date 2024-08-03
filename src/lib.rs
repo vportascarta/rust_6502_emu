@@ -291,6 +291,7 @@ impl Vm {
             Instruction::SetDec => todo!(),
             Instruction::SetIntDis => todo!(),
             Instruction::NoOp => {}
+            Instruction::Jam => self.halt = true,
             Instruction::EmuSignal(op) => {
                 let fn_signal = self
                     .signal_handlers
